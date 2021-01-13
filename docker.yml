@@ -1,0 +1,43 @@
+- name: Configuring Docker
+  hosts: docker
+  tasks:
+          - name: configuring docker repository
+            yum_repository:
+                    name: docker
+                    description: docker
+                    baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+                    gpgcheck: no
+
+
+          - name: installing docker-ce
+            command: yum install docker-ce --nobest -y
+
+          - name: installing python3
+            yum:
+                    name: python36
+                    state: present
+
+          - name: starting and enabling docker services
+            service:
+                    name: docker
+                    state: started
+                    enabled: yes
+
+          - name: downloading docker python files
+            pip:
+                    name: docker
+
+          - name: copy html files
+            copy:
+                    src: /root/ansible_docker/index.html
+                    dest: /mydoc/
+
+          - name: starting httpd webserver using Docker
+            docker_container:
+                            name: webserver
+                            image: httpd
+                            state: started
+                            exposed_ports:
+                                    - /80
+                            volumes:
+                                    - /mydoc:/usr/local/apache2/htdocs/
