@@ -1,5 +1,5 @@
 - name: Configuring Docker
-  hosts: docker
+  hosts: localhost
   tasks:
           - name: configuring docker repository
             yum_repository:
@@ -27,17 +27,35 @@
             pip:
                     name: docker
 
+          - name: creating directory mydoc
+            file:
+                    name: mydoc
+                    state: directory
+
           - name: copy html files
             copy:
-                    src: /root/ansible_docker/index.html
+                    src: index.html
                     dest: /mydoc/
 
           - name: starting httpd webserver using Docker
             docker_container:
                             name: webserver
                             image: httpd
+                            # image: sankeerthbussa/centos_ssh:version1
                             state: started
                             exposed_ports:
-                                    - /80
+                                    - 80
                             volumes:
-                                    - /mydoc:/usr/local/apache2/htdocs/
+                                    - /mydoc/:/usr/local/apache2/htdocs/
+                                    # - /mydoc:/var/www/html/
+          - name: getting container info
+            community.docker.docker_container_info:
+                    name: webserver
+            register: c
+
+          - name: updating inventory
+            blockinfile:
+                    path: /root/docker-ansible/inventory 
+                    block: |
+                            [docker_IPs]
+                            {{ c.container.NetworkSettings.IPAddress }}
